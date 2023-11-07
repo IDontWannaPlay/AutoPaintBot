@@ -6,15 +6,15 @@ import numpy as np
 image_path = 'test_images/test_img2.jpeg'  # Replace with your image file path
 frame = cv2.imread(image_path)
 
+# Set camera parameters (you need to calibrate your camera for accurate results)
+camera_matrix = np.load('calibration_matrix/camera_matrix.npy')
+dist_coeffs = np.load('calibration_matrix/dist_coeffs.npy')
+
 # Initialize ArUco dictionary
 aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
 parameters =  aruco.DetectorParameters()
 detector = aruco.ArucoDetector(aruco_dict, parameters)
-aruco_square_length = 200
-
-# Set camera parameters (you need to calibrate your camera for accurate results)
-camera_matrix = np.load('camera_matrix.npy')
-dist_coeffs = np.load('dist_coeffs.npy')
+aruco_square_length = 10
 
 # Detect ArUco tags
 corners, ids, rejected = detector.detectMarkers(frame)

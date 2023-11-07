@@ -5,7 +5,7 @@ import numpy as np
 
 # Load your image
 inputVideo = cv2.VideoCapture()
-inputVideo.open(1)
+inputVideo.open(0)
 
 # Calibration pattern
 objp = np.zeros((6*6, 3), np.float32)
@@ -22,26 +22,30 @@ while (inputVideo.grab()):
   cv2.imshow("Camera Calibration", img)
 
   key = cv2.waitKey(1)
-  if (key == 27):
+  if (key == 27): # stop if on escape key
     break
-  elif (key == 32):
+  elif (key == 32): # capture image on space key
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(gray, (6, 6), None)
 
-    if ret:
+    if ret: 
       objpoints.append(objp)
       imgpoints.append(corners)
       img = cv2.drawChessboardCorners(img, (6, 6), corners, ret)
+      x += 1
+
+      # Show detected chessboard
       cv2.imshow("Camera Calibration",img)
       cv2.waitKey(0)
-    x += 1
-    print(x)
+      print("Calibration image: ", x)
 
 # Calibrate the camera
 ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-# Save camera matrix and distortion coefficients to a file
+# Show camera matrix and distance coefficients
 print(camera_matrix)
 print(dist_coeffs)
-np.save('camera_matrix.npy', camera_matrix)
-np.save('dist_coeffs.npy', dist_coeffs)
+
+# Save camera matrix and distortion coefficients to a file
+np.save('calibration_matrix/camera_matrix.npy', camera_matrix)
+np.save('calibration_matrix/dist_coeffs.npy', dist_coeffs)

@@ -4,17 +4,17 @@ import numpy as np
 import glob
 
 # Load your image directory
-image_path = 'test_images/test1/*.jpeg'  # Replace with your image file path
+image_path = 'test_images/test1/*.jpeg'  # Replace with your image directory path
+
+# Set camera parameters (you need to calibrate your camera for accurate results)
+camera_matrix = np.load('calibration_matrix/camera_matrix_iphone.npy')
+dist_coeffs = np.load('calibration_matrix/dist_coeffs_iphone.npy')
 
 # Initialize ArUco dictionary
 aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
 parameters =  aruco.DetectorParameters()
 detector = aruco.ArucoDetector(aruco_dict, parameters)
 aruco_square_length = 10
-
-# Set camera parameters (you need to calibrate your camera for accurate results)
-camera_matrix = np.load('calibration_matrix/camera_matrix_iphone.npy')
-dist_coeffs = np.load('calibration_matrix/dist_coeffs_iphone.npy')
 
 for img_file in glob.glob(image_path):
   frame = cv2.imread(img_file)
