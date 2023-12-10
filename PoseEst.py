@@ -4,7 +4,7 @@ import numpy as np
 
 # Load your image
 inputVideo = cv2.VideoCapture()
-inputVideo.open(0)
+inputVideo.open(0) # select camera device number
 
 # Initialize ArUco dictionary
 aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
@@ -23,18 +23,19 @@ while (inputVideo.grab()):
   ret, img = inputVideo.read()
   imageCopy = img
   corners, ids, rejected = detector.detectMarkers(img)
-
   # Detect ArUco tags
   if ids is not None:
     # Calculate camera pose for each detected tag
-    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners, aruco_square_length, camera_matrix, dist_coeffs)
+    length = 10
+    objectPoints = np.array([[-length/2, length/2, 0], [length/2, length/2, 0], [length/2, -length/2, 0], [-length/2, -length/2, 0]], dtype=np.float64)
     img = aruco.drawDetectedMarkers(imageCopy, corners, ids)
-
+    print(corners)
     # Visualize the pose (e.g., draw axis on the tag)
     for i in range(len(ids)):
-      img = cv2.drawFrameAxes(img, camera_matrix, dist_coeffs, rvec[i], tvec[i], 5)
-      t = tvec[0][0]
-      r = cv2.Rodrigues(rvec[0][i])[0]
+      _, rvec, tvec = cv2.solvePnP(objectPoints, corners[i][0], camera_matrix, dist_coeffs)
+      img = cv2.drawFrameAxes(img, camera_matrix, dist_coeffs, rvec, tvec, 5)
+      t = np.ndarray.flatten(tvec)
+      r = cv2.Rodrigues(rvec)[0]
       
       tagPosition = f"Tag position: X={t[0]:.2f}, Y={t[1]:.2f}, Z={t[2]:.2f}"
       

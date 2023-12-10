@@ -22,10 +22,12 @@ img = aruco.drawDetectedMarkers(frame, corners, ids)
 
 if ids is not None:
   # Calculate camera pose for each detected tag
-  rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners, aruco_square_length, camera_matrix, dist_coeffs)
+  length = 10
+  objectPoints = np.array([[-length/2, length/2, 0], [length/2, length/2, 0], [length/2, -length/2, 0], [-length/2, -length/2, 0]], dtype=np.float64)
 
   # Visualize the pose (e.g., draw axis on the tag)
   for i in range(len(ids)):
+    _, rvec, tvec = cv2.solvePnP(objectPoints, corners[0][i], camera_matrix, dist_coeffs)
     frame = cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec[i], tvec[i], 100)
     t = tvec[0]
     print(t)
