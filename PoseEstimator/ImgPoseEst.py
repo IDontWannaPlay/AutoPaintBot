@@ -3,7 +3,7 @@ import cv2.aruco as aruco
 import numpy as np
 
 # Load your image
-image_path = 'test_images/test_img2.jpeg'  # Replace with your image file path
+image_path = '../test_images/test_img2.jpeg'  # Replace with your image file path
 frame = cv2.imread(image_path)
 
 # Set camera parameters (you need to calibrate your camera for accurate results)

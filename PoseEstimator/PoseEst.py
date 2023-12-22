@@ -13,7 +13,7 @@ parameters.cornerRefinementMethod = aruco.CORNER_REFINE_SUBPIX
 parameters.cornerRefinementMaxIterations = 100
 parameters.cornerRefinementMinAccuracy = 0.01
 detector = aruco.ArucoDetector(aruco_dict, parameters)
-aruco_square_length = 10 # aruco tag side length, arbitrary units
+length = 9.6 # aruco tag side length, arbitrary units
 
 # Set camera parameters (you need to calibrate your camera for accurate results)
 camera_matrix = np.load('calibration_matrix/camera_matrix.npy')
@@ -26,7 +26,6 @@ while (inputVideo.grab()):
   # Detect ArUco tags
   if ids is not None:
     # Calculate camera pose for each detected tag
-    length = 10
     objectPoints = np.array([[-length/2, length/2, 0], [length/2, length/2, 0], [length/2, -length/2, 0], [-length/2, -length/2, 0]], dtype=np.float64)
     img = aruco.drawDetectedMarkers(imageCopy, corners, ids)
     print(corners)
@@ -49,12 +48,12 @@ while (inputVideo.grab()):
       t = T[0:3, 3]
 
       camPosition = f"Cam position: X={t[0]:.2f}, Y={t[1]:.2f}, Z={t[2]:.2f}"
-      cv2.putText(img, camPosition, (10, (30 + i * 20) * 1), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-      cv2.putText(img, tagPosition, (10, 2 * (30 + i * 20) * 1), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+      cv2.putText(img, camPosition, (10, (30 + i * 60) * 2), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
+      cv2.putText(img, tagPosition, (10, (2 * 30 + i * 60) * 2), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
 
   # Display the image with pose estimation
   cv2.imshow("ArUco Detection", img)
-  key = cv2.waitKey(1)
+  key = cv2.waitKey(2)
 
   if (key == 27):
     break

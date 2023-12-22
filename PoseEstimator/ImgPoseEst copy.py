@@ -4,7 +4,7 @@ import numpy as np
 import glob
 
 # Load your image directory
-image_path = 'test_images/*'  # Replace with your image directory path
+image_path = '../test_images/*'  # Replace with your image directory path
 
 # Set camera parameters (you need to calibrate your camera for accurate results)
 camera_matrix = np.load('calibration_matrix/camera_matrix_iphone.npy')
