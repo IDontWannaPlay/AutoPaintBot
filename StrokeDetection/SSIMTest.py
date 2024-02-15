@@ -7,6 +7,11 @@ import glob
 # Load images
 before = cv2.imread('test_images/ssim_test/1_before.jpeg')
 after = cv2.imread('test_images/ssim_test/1_after.jpeg')
+before = cv2.imread('test_images/ssim_test/6_alignedv2.jpeg') 
+after = cv2.imread('test_images/ssim_test/6_after.jpeg')
+
+before = cv2.GaussianBlur(before,(5,5),0)
+after = cv2.GaussianBlur(after,(5,5),0)
 
 # # Convert images to grayscale
 # before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
@@ -29,7 +34,10 @@ cv2.imshow('diff', diff_blur)
 # thinned = cv2.ximgproc.thinning(diff_blur, cv2.ximgproc.THINNING_ZHANGSUEN)
 # cv2.imshow('thinned', thinned)
 
-ret, bw = cv2.threshold(diff_blur,200,255,cv2.THRESH_BINARY) #+cv2.THRESH_OTSU
+ret, bw = cv2.threshold(diff_blur,30,255,cv2.THRESH_BINARY)# +cv2.THRESH_OTSU)
+cv2.imshow('threshold diff', bw)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
 hull_list = []
@@ -37,11 +45,13 @@ hull_list = []
 for i, c in enumerate(contours):
   area = cv2.contourArea(c)
 
-  if area < 100 or area > 100000:
+  if area < 200 or area > 100000:
     continue
 
   hull = cv2.convexHull(c)
   hull_list.append(hull)
+
+for i, c in enumerate(hull_list):
   color = (rng.randint(0,256), rng.randint(0,256), rng.randint(0,256))
   cv2.drawContours(after, hull_list, i, color)
 
@@ -49,7 +59,7 @@ for i, c in enumerate(contours):
   box = cv2.boxPoints(rect)
   box = np.intp(box)
   # cv2.drawContours(before, [box], 0, (0,0,255), 2)
-  # cv2.imshow('Before Image', before)
+  cv2.imshow('Before Image', before)
   # cv2.drawContours(after, [box], 0, (0,0,255), 2)
   cv2.imshow('After Image', after)
 
