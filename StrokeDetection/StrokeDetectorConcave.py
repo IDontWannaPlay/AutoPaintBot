@@ -8,8 +8,10 @@ image_path = 'test_images/brush_detect/*'  # Replace with your image directory p
 
 # Loop through images
 for img_file in glob.glob(image_path):
+
   # read image 
   img = cv2.imread(img_file)
+  cv2.imshow('original', img)
   
   # Convert image to grayscale
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -17,6 +19,24 @@ for img_file in glob.glob(image_path):
   # Convert image to binary
   blur = cv2.GaussianBlur(gray,(5,5),0)
   ret, bw = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+  # dilate/erode bw image
+  dilation_size = 15
+  dilation_shape = cv2.MORPH_ELLIPSE
+
+  element = cv2.getStructuringElement(dilation_shape, (2 * dilation_size + 1, 2 * dilation_size + 1), (dilation_size, dilation_size))
+  
+  # repeat dilate/erode 6 times
+  dilate_erode = cv2.dilate(cv2.erode(bw, element), element)
+  for i in range(20):
+    dilate_erode = cv2.dilate(cv2.erode(dilate_erode, element), element)
+  # dilate_erode = cv2.erode(bw, element)
+  
+  # show final result
+  dilate_neg = 255 - dilate_erode
+  cv2.imshow("dilated", dilate_erode)
+  thinned = cv2.ximgproc.thinning(dilate_neg, cv2.ximgproc.THINNING_ZHANGSUEN)
+  cv2.imshow('thinned', thinned)
 
   # Find all the contours in the thresholded image
   contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
@@ -47,7 +67,6 @@ for img_file in glob.glob(image_path):
   for i in range(len(hull_list)):
     color = (rng.randint(0,256), rng.randint(0,256), rng.randint(0,256))
     cv2.drawContours(img, hull_list, i, color)
-
   cv2.imshow('img', img)
   cv2.imshow('Binarized Image', bw)
   cv2.waitKey(0)

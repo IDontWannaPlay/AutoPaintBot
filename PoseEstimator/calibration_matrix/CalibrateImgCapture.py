@@ -47,5 +47,5 @@ print(camera_matrix)
 print(dist_coeffs)
 
 # Save camera matrix and distortion coefficients to a file
-np.save('calibration_matrix/camera_matrix.npy', camera_matrix)
-np.save('calibration_matrix/dist_coeffs.npy', dist_coeffs)
+np.save('PoseEstimator/calibration_matrix/camera_matrix.npy', camera_matrix)
+np.save('PoseEstimator/calibration_matrix/dist_coeffs.npy', dist_coeffs)

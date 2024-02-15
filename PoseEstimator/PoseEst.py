@@ -13,11 +13,11 @@ parameters.cornerRefinementMethod = aruco.CORNER_REFINE_SUBPIX
 parameters.cornerRefinementMaxIterations = 100
 parameters.cornerRefinementMinAccuracy = 0.01
 detector = aruco.ArucoDetector(aruco_dict, parameters)
-length = 9.6 # aruco tag side length, arbitrary units
+length = 7.0 # aruco tag side length, arbitrary units
 
 # Set camera parameters (you need to calibrate your camera for accurate results)
-camera_matrix = np.load('calibration_matrix/camera_matrix.npy')
-dist_coeffs = np.load('calibration_matrix/dist_coeffs.npy')
+camera_matrix = np.load('PoseEstimator/calibration_matrix/camera_matrix.npy')
+dist_coeffs = np.load('PoseEstimator/calibration_matrix/dist_coeffs.npy')
 
 while (inputVideo.grab()):
   ret, img = inputVideo.read()
@@ -28,7 +28,7 @@ while (inputVideo.grab()):
     # Calculate camera pose for each detected tag
     objectPoints = np.array([[-length/2, length/2, 0], [length/2, length/2, 0], [length/2, -length/2, 0], [-length/2, -length/2, 0]], dtype=np.float64)
     img = aruco.drawDetectedMarkers(imageCopy, corners, ids)
-    print(corners)
+    # print(corners)
     # Visualize the pose (e.g., draw axis on the tag)
     for i in range(len(ids)):
       _, rvec, tvec = cv2.solvePnP(objectPoints, corners[i][0], camera_matrix, dist_coeffs)
