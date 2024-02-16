@@ -4,7 +4,10 @@ import glob
 import random as rng
 
 # Load your image directory
-image_path = 'test_images/brush_detect/*'  # Replace with your image directory path
+# image_path = 'test_images/brush_detect/*'  # Replace with your image directory path
+
+image_path = 'test_images/brush_detect/whiteboard.jpeg' # Replace with your image directory path
+
 
 # Loop through images
 for img_file in glob.glob(image_path):
@@ -80,9 +83,9 @@ for img_file in glob.glob(image_path):
   cv2.imshow('blended', blended_img)
 
   # cv2.imshow('convex hulls', hulls)
-  cv2.imshow('original', img)
+  # cv2.imshow('original', img)
   # cv2.imshow('Binarized Image', bw)
-  cv2.imshow('hull_dilate intersection', hull_dilate)
+  # cv2.imshow('hull_dilate intersection', hull_dilate)
   cv2.imshow('thinned', thinned)
   cv2.waitKey(0)
   cv2.destroyAllWindows()
