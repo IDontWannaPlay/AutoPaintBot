@@ -5,8 +5,8 @@ import random as rng
 import glob
 
 # Load images
-before = cv2.imread('test_images/ssim_test/1_before.jpeg')
-after = cv2.imread('test_images/ssim_test/1_after.jpeg')
+# before = cv2.imread('test_images/ssim_test/1_before.jpeg')
+# after = cv2.imread('test_images/ssim_test/1_after.jpeg')
 before = cv2.imread('test_images/ssim_test/6_alignedv2.jpeg') 
 after = cv2.imread('test_images/ssim_test/6_after.jpeg')
 
@@ -51,7 +51,11 @@ for i, c in enumerate(contours):
   hull = cv2.convexHull(c)
   hull_list.append(hull)
 
+mask = np.zeros((after.shape[0], after.shape[1], 3), dtype=np.uint8)
+bg = np.ones((after.shape[0], after.shape[1], 3), dtype=np.uint8) * 255
 for i, c in enumerate(hull_list):
+  cv2.drawContours(mask, hull_list, i, color=(255,255,255), thickness=cv2.FILLED)
+
   color = (rng.randint(0,256), rng.randint(0,256), rng.randint(0,256))
   cv2.drawContours(after, hull_list, i, color)
 
@@ -59,9 +63,15 @@ for i, c in enumerate(hull_list):
   box = cv2.boxPoints(rect)
   box = np.intp(box)
   # cv2.drawContours(before, [box], 0, (0,0,255), 2)
-  cv2.imshow('Before Image', before)
-  # cv2.drawContours(after, [box], 0, (0,0,255), 2)
-  cv2.imshow('After Image', after)
+
+diff_blur = cv2.cvtColor(diff_blur, cv2.COLOR_GRAY2BGR)
+mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+cropped = cv2.bitwise_and(diff_blur, diff_blur, mask=mask)
+bg[mask!=0] = diff_blur[mask!=0]
+cv2.imshow('Before Image', before)
+# cv2.drawContours(after, [box], 0, (0,0,255), 2)
+cv2.imshow('After Image', after)
+cv2.imshow('cropped Image', bg)
 
 # cv2.imshow('Binarized Image', bw)
 cv2.waitKey(0)
