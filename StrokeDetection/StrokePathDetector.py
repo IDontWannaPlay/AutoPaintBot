@@ -1,8 +1,9 @@
 import numpy as np
 import cv2
-import glob
 import random as rng
 from skimage.metrics import structural_similarity
+import time
+import matplotlib as plt
 
 
 def align_images(img1, img2, show=False):
@@ -90,9 +91,22 @@ def img_diff(img1, img2):
   threshold = 30
   ret, bw = cv2.threshold(diff_blur, threshold, 255, cv2.THRESH_BINARY)
 
+  # Create dilation/erosion element
+  dilation_size = int(0.008 * bw.shape[0])
+  dilation_shape = cv2.MORPH_ELLIPSE
+  element = cv2.getStructuringElement(
+    dilation_shape, 
+    (2 * dilation_size + 1, 2 * dilation_size + 1), 
+    (dilation_size, dilation_size)
+  )
+
+  # Repeat a dilate/erode operation
+  for i in range(1):
+    bw = cv2.erode(bw, element)
+    bw = cv2.dilate(bw, element)
+
   # Get contours based on difference blobs
   contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-
 
   hull_list = []
   img_area = img1.shape[0] * img1.shape[1]  # area of image
@@ -138,7 +152,8 @@ def get_path(img):
   ret, bw = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU)
 
   # Create dilation/erosion element
-  dilation_size = 3
+  dilation_size = int(0.008 * img.shape[0])
+  print("dilation size: %d" % dilation_size)
   dilation_shape = cv2.MORPH_ELLIPSE
   element = cv2.getStructuringElement(
     dilation_shape, 
@@ -148,7 +163,7 @@ def get_path(img):
 
   # Repeat a dilate/erode operation
   dilate_erode = bw
-  for i in range(3):
+  for i in range(1):
     dilate_erode = cv2.erode(dilate_erode, element)
     dilate_erode = cv2.dilate(dilate_erode, element)
 
@@ -185,7 +200,6 @@ def get_path(img):
 
   # Get intersection of convex hulls and dilate/erode contours
   hull_dilate_intersect = cv2.bitwise_and(hulls, dilate_neg)
-
   # do thinning, takes white on black for input so take negative
   # test = cv2.cvtColor(hull_dilate_intersect, cv2.COLOR_BGR2GRAY)
   ret, test = cv2.threshold(hull_dilate_intersect, 0, 255, cv2.THRESH_BINARY)
@@ -193,22 +207,60 @@ def get_path(img):
 
   return thinned
 
+def path_pipeline(img1, img2):
+  """Run align_images --> img_diff --> get_path"""
+  t0 = time.time()
+  aligned = align_images(img1, img2, show=False)
+  t1 = time.time()
+  diff_masked = img_diff(img1, aligned)
+  t2 = time.time()
+  path = get_path(diff_masked)
+  t3 = time.time()
 
-before = cv2.imread('test_images/ssim_test/6_before.jpeg')
-after = cv2.imread('test_images/ssim_test/6_after.jpeg')
+  print(t1-t0)
+  print(t2-t1)
+  print(t3-t2)
+  print(t3-t0)
+  return aligned, path
 
-aligned = align_images(before, after)
-diff_masked = img_diff(before, aligned)
-diff_masked = cv2.cvtColor(diff_masked, cv2.COLOR_GRAY2BGR)
-path = get_path(diff_masked)
+
+# read image
+before = cv2.imread('test_images/ssim_test/8_before.jpeg')
+after = cv2.imread('test_images/ssim_test/8_after.jpeg')
+
+# reduce resolution
+before = cv2.resize(before, (0, 0), fx=0.5, fy=0.5)
+after = cv2.resize(after, (0, 0), fx=0.5, fy=0.5)
+
+# run pipeline
+aligned, path = path_pipeline(before, after)
 
 # Superimpose path over original image
 path_color = cv2.cvtColor(path, cv2.COLOR_GRAY2BGR)
-blended_img = cv2.addWeighted(before, 0.9, path_color, 0.9, 0)
+blended_img = cv2.addWeighted(aligned, 0.4, path_color, 0.9, 0)
 
-# cv2.imshow('aligned image', aligned)
-# cv2.imshow('masked diff', diff_masked)
-cv2.imshow('brush path', path)
+# find contour of line
+contours, _ = cv2.findContours(path, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+for i, c in enumerate(contours):
+    color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
+    cv2.drawContours(path_color, contours, i, color, thickness=1)
+
+# # polyfit test
+# h, w = path.shape
+# ys, xs = np.nonzero(path)
+# coefs = np.polyfit(xs, ys, 2)
+# xx = np.arange(0, w).astype("uint8")
+# yy = h - np.polyval(coefs, xx)
+# color_img = np.repeat(path[:, :, np.newaxis], 3, axis=2)
+# color_img[yy, xx, 0] = 255  # 0 because pyplot is RGB
+# f, ax = plt.subplots(1, 2)
+# ax[0].imshow(path, cmap='gray')
+# ax[0].set_title('Binary')
+# ax[1].imshow(color_img)
+# ax[1].set_title('Polynomial')
+# plt.show()
+
+# show path line imposed on original image
 cv2.imshow('brush path blended', blended_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
