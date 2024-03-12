@@ -4,6 +4,7 @@ import random as rng
 from skimage.metrics import structural_similarity
 import time
 import matplotlib as plt
+from scipy.interpolate import PchipInterpolator
 
 
 def align_images(img1, img2, show=False):
@@ -63,13 +64,13 @@ def align_images(img1, img2, show=False):
   if (show):
     img_matches = cv2.drawMatches(img1, kp1, img2, kp2, matches, None)
     cv2.imshow('Image Matches', img_matches)
-    cv2.imshow('Realigned Image', img2_reg)
+    # cv2.imshow('Realigned Image', img2_reg)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
   
   return img2_reg
 
-def img_diff(img1, img2):
+def img_diff(img1, img2, show=False):
   """Returns a filtered SSIM image between before img1 and img2."""
   # Apply Gaussian blur on images with 5x5 kernel
   img1_blur = cv2.GaussianBlur(img1,(5,5),0)
@@ -101,12 +102,13 @@ def img_diff(img1, img2):
   )
 
   # Repeat a dilate/erode operation
+  dilate_erode = bw
   for i in range(1):
-    bw = cv2.erode(bw, element)
-    bw = cv2.dilate(bw, element)
+    dilate_erode = cv2.erode(dilate_erode, element)
+    dilate_erode = cv2.dilate(dilate_erode, element)
 
   # Get contours based on difference blobs
-  contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+  contours, _ = cv2.findContours(dilate_erode, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
   hull_list = []
   img_area = img1.shape[0] * img1.shape[1]  # area of image
@@ -134,9 +136,16 @@ def img_diff(img1, img2):
   # Keep masked portions of difference with blur
   diff_masked[mask != 0] = diff_blur[mask != 0]
 
+  if (show):
+    cv2.imshow("Diff blurred", diff_blur)
+    cv2.imshow("Diff BW", bw)
+    cv2.imshow("Dilate Eroded", dilate_erode)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
   return diff_masked
 
-def get_path(img):
+def get_path(img, show=False):
   """Returns image of predicted brush stroke path given image 
   resembling brush strokes. 
   """
@@ -173,14 +182,13 @@ def get_path(img):
   # Find all the contours in the thresholded image
   contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
-
   # Iterate through all contours
   hull_list = []
   img_area = img.shape[0] * img.shape[1]  # area of image
   for i, c in enumerate(contours):
     # Ignore if contour is too small or too large
     area = cv2.contourArea(c)
-    if area < 0.000 * img_area or area > 0.5 * img_area:
+    if area < 0.001 * img_area or area > 0.5 * img_area:
       continue
 
     # Try convex hulls of contours
@@ -195,7 +203,7 @@ def get_path(img):
     if area < 0.001 * img_area or area > 0.5 * img_area:
       continue
     
-    color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
+    color = (rng.randint(150, 256), rng.randint(150, 256), rng.randint(150, 256))
     cv2.drawContours(hulls, hull_list, i, color, thickness=cv2.FILLED)
 
   # Get intersection of convex hulls and dilate/erode contours
@@ -205,12 +213,20 @@ def get_path(img):
   ret, test = cv2.threshold(hull_dilate_intersect, 0, 255, cv2.THRESH_BINARY)
   thinned = cv2.ximgproc.thinning(test, cv2.ximgproc.THINNING_ZHANGSUEN)
 
+  if (show):
+    cv2.imshow("Thresholded", bw)
+    cv2.imshow("dilate erode", dilate_erode)
+    cv2.imshow("convex hulls", hulls)
+    cv2.imshow("dilate intersect", hull_dilate_intersect)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
   return thinned
 
 def path_pipeline(img1, img2):
   """Run align_images --> img_diff --> get_path"""
   t0 = time.time()
-  aligned = align_images(img1, img2, show=False)
+  aligned = align_images(img1, img2, show=True)
   t1 = time.time()
   diff_masked = img_diff(img1, aligned)
   t2 = time.time()
@@ -222,6 +238,69 @@ def path_pipeline(img1, img2):
   print(t3-t2)
   print(t3-t0)
   return aligned, path
+
+def polyfit_contours(reference, path, show=False):
+  """takes path image and returns polynomial curves"""
+  contours, _ = cv2.findContours(path, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+  # Specify the degree of the polynomial fit
+  n = 3  # Change this value to the desired degree
+  bg = np.zeros_like(reference, dtype=np.uint8)
+  for i, c in enumerate(contours):
+    # Extract x and y coordinates of the contour
+    xx, yy = c[:, 0, 0], c[:, 0, 1]
+
+    # Fit a polynomial to the contour
+    p = np.polyfit(xx, yy, n)
+
+    # Generate x values for the curve
+    curve_x = np.linspace(min(xx), max(xx), 100)
+    curve_y = np.polyval(p, curve_x)
+
+    # Convert curve points to integer coordinates
+    curve_points = np.column_stack((curve_x.astype(int), curve_y.astype(int)))
+
+    color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
+    cv2.polylines(reference, [curve_points], False, color)
+
+  cv2.imshow('Image with Curve', reference)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+
+def bezier_fit_contours(reference, path, show=False):
+  contours, _ = cv2.findContours(path, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+  # Specify the number of points on the Bezier curve
+
+  bg = np.zeros_like(reference, dtype=np.uint8)
+
+  # Iterate over each contour and fit a Bezier curve
+  for contour in contours:
+    # Extract x and y coordinates of the contour
+    xx, yy = contour[:, 0, 0], contour[:, 0, 1]
+
+    # Sort the contour points based on x-values
+    sorted_indices = np.argsort(xx)
+    xx_sorted = xx[sorted_indices]
+    yy_sorted = yy[sorted_indices]
+
+    # Perform PCHIP interpolation
+    interp_func = PchipInterpolator(xx_sorted, yy_sorted)
+
+    # Generate x values for the curve
+    curve_x = np.linspace(min(xx_sorted), max(xx_sorted), 100)
+    curve_y = interp_func(curve_x)
+
+    # Convert curve points to integer coordinates
+    curve_points = np.column_stack((curve_x.astype(int), curve_y.astype(int)))
+
+    # Draw the curve on the original image
+    cv2.polylines(bg, [curve_points], isClosed=False, color=(255, 0, 0), thickness=2)
+
+  # Display the image with the curves
+  cv2.imshow('Image with Curves', bg)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+
 
 
 # read image
@@ -237,13 +316,39 @@ aligned, path = path_pipeline(before, after)
 
 # Superimpose path over original image
 path_color = cv2.cvtColor(path, cv2.COLOR_GRAY2BGR)
-blended_img = cv2.addWeighted(aligned, 0.4, path_color, 0.9, 0)
+
+polyfit_contours(aligned, path)
 
 # find contour of line
 contours, _ = cv2.findContours(path, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 for i, c in enumerate(contours):
     color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
     cv2.drawContours(path_color, contours, i, color, thickness=1)
+
+
+# image = path
+
+# # Find non-zero elements in the image
+# ii = np.nonzero(image)
+
+# # Get y and x coordinates
+# yy, xx = ii
+
+# # Specify the degree of the polynomial fit
+# n = 3  # Change this value to the desired degree
+
+# # Fit a polynomial to the data
+# p = np.polyfit(xx, yy, n)
+# print(p)
+
+# curve_x = np.linspace(0, after.shape[1], 100)
+# curve_y = np.polyval(p, curve_x)
+
+# curve_points = np.column_stack((curve_x.astype(int), curve_y.astype(int)))
+# cv2.polylines(path_color, [curve_points], False, (0, 255, 0), thickness=2)
+# cv2.imshow('Image with Curve', path_color)
+
+blended_img = cv2.addWeighted(aligned, 0.4, path_color, 1, 0)
 
 # # polyfit test
 # h, w = path.shape
