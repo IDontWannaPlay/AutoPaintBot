@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/simuser/ws_moveit/devel/.private/fanuc_m20ia10l_moveit_config/setup.sh

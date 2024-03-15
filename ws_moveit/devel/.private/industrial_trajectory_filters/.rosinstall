@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/simuser/ws_moveit/devel/.private/industrial_trajectory_filters/setup.sh

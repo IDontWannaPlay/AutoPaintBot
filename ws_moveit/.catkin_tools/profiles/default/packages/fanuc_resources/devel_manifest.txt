@@ -1,0 +1,5 @@
+fanuc/fanuc_resources
+/home/simuser/ws_moveit/devel/.private/fanuc_resources/cmake.lock /home/simuser/ws_moveit/devel/./cmake.lock
+/home/simuser/ws_moveit/devel/.private/fanuc_resources/lib/pkgconfig/fanuc_resources.pc /home/simuser/ws_moveit/devel/lib/pkgconfig/fanuc_resources.pc
+/home/simuser/ws_moveit/devel/.private/fanuc_resources/share/fanuc_resources/cmake/fanuc_resourcesConfig-version.cmake /home/simuser/ws_moveit/devel/share/fanuc_resources/cmake/fanuc_resourcesConfig-version.cmake
+/home/simuser/ws_moveit/devel/.private/fanuc_resources/share/fanuc_resources/cmake/fanuc_resourcesConfig.cmake /home/simuser/ws_moveit/devel/share/fanuc_resources/cmake/fanuc_resourcesConfig.cmake

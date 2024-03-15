@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/simuser/ws_moveit/devel/.private/fanuc_m710ic_support/setup.sh

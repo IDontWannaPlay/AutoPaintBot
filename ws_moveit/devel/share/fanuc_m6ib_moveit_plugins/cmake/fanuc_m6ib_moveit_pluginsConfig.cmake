@@ -1,0 +1,1 @@
+/home/simuser/ws_moveit/devel/.private/fanuc_m6ib_moveit_plugins/share/fanuc_m6ib_moveit_plugins/cmake/fanuc_m6ib_moveit_pluginsConfig.cmake
