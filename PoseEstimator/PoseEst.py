@@ -26,15 +26,17 @@ while (inputVideo.grab()):
   # Detect ArUco tags
   if ids is not None:
     # Calculate camera pose for each detected tag
-    objectPoints = np.array([[-length/2, length/2, 0], [length/2, length/2, 0], [length/2, -length/2, 0], [-length/2, -length/2, 0]], dtype=np.float64)
+    # objectPoints = np.array([[-length/2, length/2, 0], [length/2, length/2, 0], [length/2, -length/2, 0], [-length/2, -length/2, 0]], dtype=np.float64)
+    objectPoints = np.array([[0, -length/2, length/2], [0, length/2, length/2], [0, length/2, -length/2], [0, -length/2, -length/2]], dtype=np.float64)
     img = aruco.drawDetectedMarkers(imageCopy, corners, ids)
     # print(corners)
     # Visualize the pose (e.g., draw axis on the tag)
     for i in range(len(ids)):
       _, rvec, tvec = cv2.solvePnP(objectPoints, corners[i][0], camera_matrix, dist_coeffs)
-      img = cv2.drawFrameAxes(img, camera_matrix, dist_coeffs, rvec, tvec, 5)
+      img = cv2.drawFrameAxes(img, cal;mera_matrix, dist_coeffs, rvec, tvec, 5)
       t = np.ndarray.flatten(tvec)
       r = cv2.Rodrigues(rvec)[0]
+      print(r)
       
       tagPosition = f"Tag position: X={t[0]:.2f}, Y={t[1]:.2f}, Z={t[2]:.2f}"
       

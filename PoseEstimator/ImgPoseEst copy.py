@@ -4,7 +4,7 @@ import numpy as np
 import glob
 
 # Load your image directory
-image_path = '../test_images/presentation.jpg'  # Replace with your image directory path
+image_path = 'test_images/coord_test/*.jpeg'  # Replace with your image directory path
 
 # Set camera parameters (you need to calibrate your camera for accurate results)
 camera_matrix = np.load('PoseEstimator/calibration_matrix/camera_matrix_iphone.npy')
@@ -37,7 +37,7 @@ for img_file in glob.glob(image_path):
     for i in range(len(ids)):
       # Calculate pose of detected tag
       _, rvec, tvec = cv2.solvePnP(objectPoints, corners[0][i], camera_matrix, dist_coeffs)
-      img = cv2.drawFrameAxes(img, camera_matrix, dist_coeffs, rvec, tvec, 5)
+      img = cv2.drawFrameAxes(img, camera_matrix, dist_coeffs, rvec, tvec, 15)
       
       # Homogeneous transform matrix
       t = np.ndarray.flatten(tvec)
