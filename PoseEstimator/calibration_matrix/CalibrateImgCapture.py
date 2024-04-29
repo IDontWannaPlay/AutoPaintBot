@@ -21,7 +21,7 @@ while (inputVideo.grab()):
   ret, img = inputVideo.read()
   cv2.imshow("Camera Calibration", img)
 
-  key = cv2.waitKey(1)
+  key = cv2.waitKey(3)
   if (key == 27): # stop if on escape key
     break
   elif (key == 32): # capture image on space key
