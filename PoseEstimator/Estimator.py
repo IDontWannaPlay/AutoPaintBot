@@ -2,12 +2,13 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 import time
+from math import sin, cos, radians
 
 class PoseEstimator:
-  def __init__(self, camera_device_number=0, aruco_length_cm=7.0) -> None:
+  def __init__(self, camera_device_number=0, aruco_length_cm=5.0) -> None:
 
     # Brush length in cm
-    self.brush_length_cm = 15
+    self.brush_length_cm = 21.5
 
     # Load camera to brush offset
     try:
@@ -132,8 +133,8 @@ class PoseEstimator:
   def get_camera_to_brush_matrix(self):
     camera_to_brush_matrix = np.zeros((4, 4))
     camera_to_brush_matrix[0][2] = 1
-    camera_to_brush_matrix[1][0] = -1
-    camera_to_brush_matrix[2][1] = -1
+    camera_to_brush_matrix[1][0] = 1
+    camera_to_brush_matrix[2][1] = 1
     camera_to_brush_matrix[3, 3] = 1
     offset = -(camera_to_brush_matrix @ self.camera_to_brush_offset)[0:3]
     camera_to_brush_matrix[0:3, 3] = offset
@@ -144,27 +145,30 @@ class PoseEstimator:
     brush_to_end_effector_matrix[0:3, 0:3] = np.eye(3)
     brush_to_end_effector_matrix[0:3, 3] = np.array([self.brush_length_cm, 0, 0])
     brush_to_end_effector_matrix[3, 3] = 1
-    return brush_to_end_effector_matrix
+
+    transform_matrix = np.array([
+        [0, 0, 1, 0],
+        [0, -1, 0, 0],
+        [1, 0, 0, 0],
+        [0, 0, 0, 1]
+    ])
+
+    # print(transform_matrix @ brush_to_end_effector_matrix)
+    return transform_matrix @ brush_to_end_effector_matrix
   
-  def get_end_effector_to_world_matrix(self, quaternion, position):
-    """
-    Calculate the homogeneous transformation matrix for the end effector.
-    
-    Parameters:
-        quaternion (numpy.array): Quaternion in the form [w, x, y, z].
-        position (numpy.array): Position in the form [x, y, z].
-    
-    Returns:
-        numpy.array: 4x4 homogeneous transformation matrix.
-    """
-    rotation_matrix = self.quaternion_to_rotation_matrix(quaternion)
+  def get_end_effector_to_world_matrix(self, x, y, z, w, p, r):
     homogeneous_matrix = np.zeros((4, 4))
-    homogeneous_matrix[0:3, 0:3] = rotation_matrix
-    homogeneous_matrix[0:3, 3] = position
+    homogeneous_matrix[0:3, 0:3] = np.linalg.inv(self.wpr_to_rotation_matrix(w, p, r))
+    homogeneous_matrix[0:3, 3] = np.array([x, y, z])
     homogeneous_matrix[3, 3] = 1
-    return homogeneous_matrix
-  
-  def get_canvas_to_world_matrix(self, rvec, tvec, quaternion, position):
+
+
+
+    print("End effector to world matrix:")
+    print(homogeneous_matrix)
+    return homogeneous_matrix 
+
+  def get_canvas_to_world_matrix(self, rvec, tvec, x, y, z, w, p, r):
     """
     Calculate the homogeneous transformation matrix for the canvas.
     
@@ -179,7 +183,7 @@ class PoseEstimator:
     canvas_to_camera_matrix = self.get_canvas_to_camera_matrix(rvec, tvec)
     camera_to_brush_matrix = self.get_camera_to_brush_matrix()
     brush_to_end_effector_matrix = self.get_brush_to_end_effector_matrix()
-    end_effector_to_world_matrix = self.get_end_effector_to_world_matrix(quaternion, position)
+    end_effector_to_world_matrix = self.get_end_effector_to_world_matrix(x, y, z, w, p, r)
     canvas_to_world_matrix = end_effector_to_world_matrix @ brush_to_end_effector_matrix @ camera_to_brush_matrix @ canvas_to_camera_matrix
     return canvas_to_world_matrix
 
@@ -200,17 +204,17 @@ class PoseEstimator:
     camera_to_brush_matrix = self.get_camera_to_brush_matrix()
     brush_to_end_effector_matrix = self.get_brush_to_end_effector_matrix()
     
-    print("Canvas to camera matrix:")
-    print(canvas_to_camera_matrix)
-    print("Camera to brush matrix:")
-    print(camera_to_brush_matrix)
-    print("Brush to end effector matrix:")
-    print(brush_to_end_effector_matrix)
+    # print("Canvas to camera matrix:")
+    # print(canvas_to_camera_matrix)
+    # print("Camera to brush matrix:")
+    # print(camera_to_brush_matrix)
+    # print("Brush to end effector matrix:")
+    # print(brush_to_end_effector_matrix)
     canvas_to_world_matrix = brush_to_end_effector_matrix @ camera_to_brush_matrix @ canvas_to_camera_matrix
     return canvas_to_world_matrix
   
   ### Calibration helpers
-  def set_camera_to_brush_offset(self, default=False, save_to_file=False):
+  def set_camera_to_brush_offset(self, default=False, save_to_file=False, load_from_file=False):
     """
     Sets the camera to brush offset by calculating the brush tip coordinate in camera coordinates.
 
@@ -224,6 +228,13 @@ class PoseEstimator:
     Returns:
       None
     """
+    if load_from_file:
+      try:
+        self.camera_to_brush_offset = np.load('calibration_files/camera_to_brush_offset.npy')
+        return
+      except:
+        print("Camera to brush offset not found.")
+  
     rotation_matrix = None
     if default:
       brush_canvas_coordinates = np.array([0, -10, 0, 1])
@@ -254,7 +265,7 @@ class PoseEstimator:
       if save_to_file:
         np.save('calibration_files/camera_to_brush_offset.npy', self.camera_to_brush_offset)
 
-  def convert_canvas_to_world(self, rvec, tvec, quaternion, position, canvas_coords):
+  def convert_canvas_to_world(self, rvec, tvec, x, y, z, w, p, r, canvas_coords):
     """
     Convert canvas coordinates to world coordinates.
     
@@ -268,7 +279,7 @@ class PoseEstimator:
     Returns:
         numpy.array: World coordinates in the form [x, y, z].
     """
-    canvas_to_world_matrix = self.get_canvas_to_world_matrix(rvec, tvec, quaternion, position)
+    canvas_to_world_matrix = self.get_canvas_to_world_matrix(rvec, tvec, x, y, z, w, p, r)
     canvas_coords = np.append(canvas_coords, 1)
     world_coords = canvas_to_world_matrix @ canvas_coords
     return world_coords[0:3]
@@ -308,3 +319,31 @@ class PoseEstimator:
         [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x**2 - 2*y**2]
     ])
     return rotation_matrix
+
+  def wpr_to_rotation_matrix(self, yaw_deg, pitch_deg, roll_deg):
+    """Convert wpr angles to rotation matrix."""
+
+    yaw_rad = radians(yaw_deg)
+    pitch_rad = radians(pitch_deg)
+    roll_rad = radians(roll_deg)
+
+    R_z = np.array([[cos(yaw_rad), -sin(yaw_rad), 0],
+                    [sin(yaw_rad), cos(yaw_rad), 0],
+                    [0, 0, 1]])
+
+    R_y = np.array([[cos(pitch_rad), 0, sin(pitch_rad)],
+                    [0, 1, 0],
+                    [-sin(pitch_rad), 0, cos(pitch_rad)]])
+
+    R_x = np.array([[1, 0, 0],
+                    [0, cos(roll_rad), -sin(roll_rad)],
+                    [0, sin(roll_rad), cos(roll_rad)]])
+
+    # print(R_z)
+    # print(R_y)
+    # print(R_x)
+    # R = R_x @ R_y @ R_z
+    R = R_z @ R_y @ R_x
+    print("WPR Rotation matrix:")
+    print(R)
+    return R

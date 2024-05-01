@@ -86,10 +86,11 @@ def img_diff(img1, img2, show=False):
 
   # Apply Gaussian blur on gray difference image with 5x5 kernel
   diff_blur = cv2.GaussianBlur(diff_gray,(5,5),0)
+  cv2.imshow('difference blurred', diff_blur)
 
   # Apply threshold to blurred difference image
   # Can potentially use cv2.THRESH_OTSU
-  threshold = 30
+  threshold = 160
   ret, bw = cv2.threshold(diff_blur, threshold, 255, cv2.THRESH_BINARY)
 
   # Create dilation/erosion element
@@ -304,6 +305,8 @@ def bezier_fit_contours(reference, path, show=False):
 
 
 # read image
+# before = cv2.imread('test_images/ssim_test/SSIMBefore.jpg')
+# after = cv2.imread('test_images/ssim_test/SSIMAfter.jpg')
 before = cv2.imread('test_images/ssim_test/8_before.jpeg')
 after = cv2.imread('test_images/ssim_test/8_after.jpeg')
 

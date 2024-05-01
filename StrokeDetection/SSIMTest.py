@@ -5,10 +5,12 @@ import random as rng
 import glob
 
 # Load images
-# before = cv2.imread('test_images/ssim_test/1_before.jpeg')
-# after = cv2.imread('test_images/ssim_test/1_after.jpeg')
-before = cv2.imread('test_images/ssim_test/6_alignedv2.jpeg') 
-after = cv2.imread('test_images/ssim_test/6_after.jpeg')
+before = cv2.imread('test_images/ssim_test/8_before.jpeg')
+after = cv2.imread('test_images/ssim_test/8_after.jpeg')
+# before = cv2.imread('test_images/ssim_test/6_alignedv2.jpeg') 
+# after = cv2.imread('test_images/ssim_test/6_after.jpeg')
+# before = cv2.imread('test_images/ssim_test/SSIMBefore.jpg') 
+# after = cv2.imread('test_images/ssim_test/SSIMAfter.jpg')
 
 before = cv2.GaussianBlur(before,(5,5),0)
 after = cv2.GaussianBlur(after,(5,5),0)
@@ -56,7 +58,7 @@ hull_list = []
 for i, c in enumerate(contours):
   area = cv2.contourArea(c)
 
-  if area < 200 or area > 100000:
+  if area < 500 or area > 100000:
     continue
 
   hull = cv2.convexHull(c)

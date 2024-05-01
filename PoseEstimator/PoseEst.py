@@ -51,12 +51,12 @@ while (inputVideo.grab()):
       t = T[0:3, 3]
 
       camPosition = f"Cam position: X={t[0]:.2f}, Y={t[1]:.2f}, Z={t[2]:.2f}"
-      cv2.putText(img, camPosition, (10, (30 + i * 60) * 2), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
+      # cv2.putText(img, camPosition, (10, (30 + i * 60) * 2), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
       cv2.putText(img, tagPosition, (10, (2 * 30 + i * 60) * 2), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
 
   # Display the image with pose estimation
   cv2.imshow("ArUco Detection", img)
-  key = cv2.waitKey(3)
+  key = cv2.waitKey(10)
 
   if (key == 27):
     break
